@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shale Namma Pride</string>
+    
+    <!-- Login Screen -->
+    <string name="login_title_shale">Shale</string>
+    <string name="login_title_namma_pride">NAMMA PRIDE</string>
+    <string name="login_connect">Connect with your School</string>
+    <string name="login_subtitle">Supporting transparency and quality\neducation in rural areas.</string>
+    <string name="login_google">Continue with Google</string>
+    <string name="login_guest">Guest Login (Quick Test)</string>
+    
+    <!-- Dashboard Screen -->
+    <string name="dashboard_greeting">Namaskara!</string>
+    <string name="dashboard_guest">Guest</string>
+    <string name="dashboard_nutrition_header">TODAY\'S NUTRITION</string>
+    <string name="dashboard_facility_header">Facility Tour</string>
+    <string name="dashboard_stars_header">Student Stars</string>
+    <string name="dashboard_date">DATE</string>
+    
+    <!-- Meal Detail Screen -->
+    <string name="meal_nutrition_report">NUTRITION REPORT</string>
+    <string name="meal_status_label">STATUS</string>
+    <string name="meal_status_served">Served</string>
+    <string name="meal_date_label">DATE</string>
+    <string name="meal_timetable_header">Weekly Timetable</string>
+    
+    <!-- Timetable Days -->
+    <string name="day_mon">MON</string>
+    <string name="day_tue">TUE</string>
+    <string name="day_wed">WED</string>
+    <string name="day_thu">THU</string>
+    <string name="day_fri">FRI</string>
+    <string name="day_sat">SAT</string>
+    <string name="today_badge">TODAY</string>
+    <string name="meal_type_standard">Standard Mid-day Meal</string>
+    
+    <!-- Dummy Data (Meals) -->
+    <string name="meal_rice_sambar_egg">Rice, Sambar, and Egg</string>
+    <string name="meal_mon">Rice &amp; Mixed Veg Sambar</string>
+    <string name="meal_tue">Wheat Upma with Veggies</string>
+    <string name="meal_wed">Rice, Egg Curry &amp; Fruit</string>
+    <string name="meal_thu">Lemon Rice (Chitranna)</string>
+    <string name="meal_fri">Rice, Sambar &amp; Boiled Egg</string>
+    <string name="meal_sat">Bisibelebath</string>
+
+    <!-- Dummy Data (Facilities) -->
+    <string name="facility_science">Science Lab</string>
+    <string name="facility_science_desc">A basic room equipped with microscopes, test...</string>
+    <string name="facility_library">Library</string>
+    <string name="facility_playground">Playground</string>
+    <string name="facility_computer">Computer Lab</string>
+    
+    <!-- Dummy Data (Stars) -->
+    <string name="star_aarav">Aarav</string>
+    <string name="star_aarav_achieve">Top Athlete</string>
+    <string name="star_diya">Diya</string>
+    <string name="star_diya_achieve">Science Fair Winner</string>
+    <string name="star_kiran">Kiran</string>
+    <string name="star_kiran_achieve">Math Olympiad</string>
+    <string name="star_sneha">Sneha</string>
+    <string name="star_sneha_achieve">Best Artist</string>
+    <string name="star_arun">Arun</string>
+    <string name="star_arun_achieve">CHAMPION OF THE YEAR</string>
+
+    <!-- Feedback Bottom Sheet -->
+    <string name="feedback">Feedback</string>
+    <string name="feedback_hint">Your thoughts...</string>
+    <string name="anonymous">Anonymous</string>
+    <string name="submit_feedback">Submit Feedback</string>
+    <string name="feedback_sent_toast">Feedback sent successfully!</string>
+
+</resources>
