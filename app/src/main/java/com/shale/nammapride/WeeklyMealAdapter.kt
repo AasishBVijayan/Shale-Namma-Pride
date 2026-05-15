@@ -7,11 +7,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.shale.nammapride.databinding.ItemWeeklyMealBinding
 
-data class WeeklyMeal(
-    val day: String,
-    val name: String,
-    val isToday: Boolean = false
-)
 
 class WeeklyMealAdapter(
     private val meals: List<WeeklyMeal>

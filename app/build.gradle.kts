@@ -73,6 +73,10 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    // Coil for image loading
+    implementation("io.coil-kt:coil:2.5.0")
 
     // Google Sign-In
     implementation(libs.play.services.auth)

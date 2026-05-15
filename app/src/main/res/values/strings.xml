@@ -69,5 +69,7 @@
     <string name="anonymous">Anonymous</string>
     <string name="submit_feedback">Submit Feedback</string>
     <string name="feedback_sent_toast">Feedback sent successfully!</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
 
 </resources>

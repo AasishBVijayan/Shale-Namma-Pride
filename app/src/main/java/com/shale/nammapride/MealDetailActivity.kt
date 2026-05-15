@@ -10,10 +10,20 @@ import androidx.core.os.LocaleListCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.shale.nammapride.databinding.ActivityMealDetailBinding
 
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.load
+
 class MealDetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMealDetailBinding
+    private val firebaseManager = FirebaseManager.getInstance()
     private var isAdmin: Boolean = false
+    private var currentMealTitle: String = ""
+    private var currentDashboardData = DashboardData()
+
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { uploadMealImage(it) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,10 +37,59 @@ class MealDetailActivity : AppCompatActivity() {
         }
         
         setupLanguageToggle()
-        setupWeeklyTimetable()
+        loadData()
         setupAdminFeatures()
     }
     
+    private fun loadData() {
+        // Load Today's Meal Title
+        firebaseManager.getDashboardData { data ->
+            currentDashboardData = data
+            currentMealTitle = data.todayMealName
+            binding.tvMealTitle.text = currentMealTitle
+            
+            if (data.imageUrl != null) {
+                binding.ivMealImage.load(data.imageUrl)
+            }
+        }
+
+        // Load Weekly Timetable
+        firebaseManager.getWeeklyMeals { meals ->
+            if (meals.isEmpty() && isAdmin) {
+                initializeDefaultMeals()
+            } else {
+                binding.rvWeeklyTimetable.layoutManager = LinearLayoutManager(this)
+                binding.rvWeeklyTimetable.adapter = WeeklyMealAdapter(meals)
+            }
+        }
+    }
+
+    private fun uploadMealImage(uri: android.net.Uri) {
+        val toast = Toast.makeText(this, "Uploading image...", Toast.LENGTH_SHORT)
+        toast.show()
+
+        firebaseManager.uploadImage(this, "dashboard", uri, { url ->
+            toast.cancel()
+            Toast.makeText(this, "Upload successful!", Toast.LENGTH_SHORT).show()
+            firebaseManager.updateDashboardData(currentDashboardData.copy(imageUrl = url))
+        }, {
+            toast.cancel()
+            Toast.makeText(this, "Upload failed: ${it.message}", Toast.LENGTH_SHORT).show()
+        })
+    }
+
+    private fun initializeDefaultMeals() {
+        val meals = listOf(
+            WeeklyMeal("m1", getString(R.string.day_mon), getString(R.string.meal_mon)),
+            WeeklyMeal("m2", getString(R.string.day_tue), getString(R.string.meal_tue)),
+            WeeklyMeal("m3", getString(R.string.day_wed), getString(R.string.meal_wed)),
+            WeeklyMeal("m4", getString(R.string.day_thu), getString(R.string.meal_thu), isToday = true),
+            WeeklyMeal("m5", getString(R.string.day_fri), getString(R.string.meal_fri)),
+            WeeklyMeal("m6", getString(R.string.day_sat), getString(R.string.meal_sat))
+        )
+        meals.forEach { firebaseManager.updateWeeklyMeal(it) }
+    }
+
     private fun setupLanguageToggle() {
         val currentLocales = AppCompatDelegate.getApplicationLocales()
         val isKannada = currentLocales.toLanguageTags() == "kn"
@@ -60,32 +119,46 @@ class MealDetailActivity : AppCompatActivity() {
         }
     }
     
-    private fun setupWeeklyTimetable() {
-        val meals = listOf(
-            WeeklyMeal(getString(R.string.day_mon), getString(R.string.meal_mon)),
-            WeeklyMeal(getString(R.string.day_tue), getString(R.string.meal_tue)),
-            WeeklyMeal(getString(R.string.day_wed), getString(R.string.meal_wed)),
-            WeeklyMeal(getString(R.string.day_thu), getString(R.string.meal_thu), isToday = true),
-            WeeklyMeal(getString(R.string.day_fri), getString(R.string.meal_fri)),
-            WeeklyMeal(getString(R.string.day_sat), getString(R.string.meal_sat))
-        )
-        
-        binding.rvWeeklyTimetable.layoutManager = LinearLayoutManager(this)
-        binding.rvWeeklyTimetable.adapter = WeeklyMealAdapter(meals)
-    }
-
     private fun setupAdminFeatures() {
         if (isAdmin) {
             binding.btnEditMeal.visibility = View.VISIBLE
             binding.btnEditMeal.setOnClickListener {
-                AlertDialog.Builder(this)
-                    .setTitle("Edit Meal Details")
-                    .setMessage("Admin editing options would appear here (e.g., change status to Not Served).")
-                    .setPositiveButton("OK", null)
-                    .show()
+                showEditMealDialog()
             }
         } else {
             binding.btnEditMeal.visibility = View.GONE
         }
+    }
+
+    private fun showEditMealDialog() {
+        val layout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(40, 20, 40, 0)
+        }
+        
+        val editText = android.widget.EditText(this).apply {
+            setText(currentMealTitle)
+        }
+        val btnPickImage = android.widget.Button(this).apply {
+            text = "Change Image"
+            setOnClickListener {
+                pickImageLauncher.launch("image/*")
+            }
+        }
+        
+        layout.addView(editText)
+        layout.addView(btnPickImage)
+        
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.meal_nutrition_report))
+            .setView(layout)
+            .setPositiveButton(getString(R.string.save)) { _, _ ->
+                val newName = editText.text.toString()
+                if (newName.isNotEmpty()) {
+                    firebaseManager.updateDashboardData(currentDashboardData.copy(todayMealName = newName))
+                }
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
     }
 }
