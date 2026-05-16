@@ -42,44 +42,41 @@ class FacilityAdapter(
         }
 
         private fun showEditDialog(facility: Facility) {
-            val layout = android.widget.LinearLayout(itemView.context).apply {
-                orientation = android.widget.LinearLayout.VERTICAL
-                setPadding(40, 20, 40, 0)
+            val context = itemView.context
+            val dialogBinding = com.shale.nammapride.databinding.DialogEditGenericBinding.inflate(
+                android.view.LayoutInflater.from(context)
+            )
+
+            dialogBinding.tvDialogTitle.text = "Edit Facility"
+            dialogBinding.etName.setText(facility.name)
+            dialogBinding.tilName.hint = "Facility Name"
+
+            dialogBinding.tilExtra1.visibility = View.VISIBLE
+            dialogBinding.tilExtra1.hint = "Description"
+            dialogBinding.etExtra1.setText(facility.description)
+
+            if (facility.imageUrl != null) {
+                dialogBinding.ivPreview.load(facility.imageUrl)
+            } else if (facility.imageResId != null) {
+                dialogBinding.ivPreview.setImageResource(facility.imageResId)
             }
 
-            val nameEdit = android.widget.EditText(itemView.context).apply {
-                hint = "Facility Name"
-                setText(facility.name)
-            }
-            val descEdit = android.widget.EditText(itemView.context).apply {
-                hint = "Description"
-                setText(facility.description)
-            }
-            val btnPickImage = android.widget.Button(itemView.context).apply {
-                text = "Change Image"
-                setOnClickListener {
-                    onPickImage?.invoke(facility)
-                }
+            dialogBinding.btnChangeImage.setOnClickListener {
+                onPickImage?.invoke(facility)
             }
 
-            layout.addView(nameEdit)
-            layout.addView(descEdit)
-            layout.addView(btnPickImage)
-
-            AlertDialog.Builder(itemView.context)
-                .setTitle("Edit Facility")
-                .setView(layout)
-                .setPositiveButton(itemView.context.getString(R.string.save)) { _, _ ->
-                    val newName = nameEdit.text.toString()
-                    val newDesc = descEdit.text.toString()
+            AlertDialog.Builder(context)
+                .setView(dialogBinding.root)
+                .setPositiveButton(context.getString(R.string.save)) { _, _ ->
+                    val newName = dialogBinding.etName.text.toString()
+                    val newDesc = dialogBinding.etExtra1.text.toString()
                     if (newName.isNotEmpty()) {
-                        Toast.makeText(itemView.context, "Saving...", Toast.LENGTH_SHORT).show()
                         firebaseManager.updateFacility(facility.copy(name = newName, description = newDesc)) {
-                            Toast.makeText(itemView.context, "Saved!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Saved!", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
-                .setNegativeButton(itemView.context.getString(R.string.cancel), null)
+                .setNegativeButton(context.getString(R.string.cancel), null)
                 .show()
         }
     }

@@ -19,11 +19,22 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import coil.load
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val firebaseManager = FirebaseManager.getInstance()
+    private val aiTranslator = AITranslator.getInstance()
     private var currentDashboardData = DashboardData()
+    private var isFirstLoad = true
     
     private var selectedFacilityForImage: Facility? = null
     private var selectedStarForImage: StudentStar? = null
@@ -37,6 +48,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        aiTranslator.downloadModelsIfNeeded { success ->
+            if (success) {
+                // Models ready, but we can proceed anyway as translate has a fallback
+            }
+        }
+
+        createNotificationChannel()
+        checkNotificationPermission()
 
         val isAdmin = intent.getBooleanExtra("IS_ADMIN", false)
 
@@ -67,17 +87,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadData(isAdmin: Boolean) {
+        val isKannada = AppCompatDelegate.getApplicationLocales().toLanguageTags() == "kn"
+
         // Load Dashboard Nutrition
         firebaseManager.getDashboardData { data ->
+            if (!isFirstLoad && data != currentDashboardData) {
+                showUpdateNotification("Nutrition Updated", "Today's meal has been updated to: ${data.todayMealName}")
+            }
             currentDashboardData = data
-            binding.tvTodayMealName.text = data.todayMealName
+            isFirstLoad = false
+            
+            // AI Translation for Meal Name
+            if (isKannada) {
+                aiTranslator.translate(data.todayMealName, toKannada = true) { translated ->
+                    binding.tvTodayMealName.text = translated
+                }
+            } else {
+                binding.tvTodayMealName.text = data.todayMealName
+            }
+
             if (data.imageUrl != null) {
-                // Assuming there's an ImageView for the dashboard meal. 
-                // In activity_main.xml, line 105 is an ImageView in FrameLayout.
-                // It doesn't have an ID. I should add one or find it.
-                // Wait, line 105: <ImageView android:layout_width="match_parent" ... />
-                // I'll add an ID to it in the XML or just find it by index if needed.
-                // Let's assume I added android:id="@+id/ivDashboardMeal"
                 findViewById<ImageView>(R.id.ivDashboardMeal)?.load(data.imageUrl)
             }
         }
@@ -105,6 +134,43 @@ class MainActivity : AppCompatActivity() {
                     selectedStarForImage = star
                     pickImageLauncher.launch("image/*")
                 }
+            }
+        }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "App Updates"
+            val descriptionText = "Notifications for when the school details change"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel("updates_channel", name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
+            }
+        }
+    }
+
+    private fun showUpdateNotification(title: String, message: String) {
+        val builder = NotificationCompat.Builder(this, "updates_channel")
+            .setSmallIcon(R.drawable.ic_launcher_foreground) // Using launcher icon as small icon
+            .setContentTitle(title)
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+
+        with(NotificationManagerCompat.from(this)) {
+            if (ActivityCompat.checkSelfPermission(this@MainActivity, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                notify(System.currentTimeMillis().toInt(), builder.build())
             }
         }
     }
@@ -210,45 +276,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showEditDashboardDialog() {
-        val layout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(40, 20, 40, 0)
+        val dialogBinding = com.shale.nammapride.databinding.DialogEditGenericBinding.inflate(layoutInflater)
+        
+        dialogBinding.tvDialogTitle.text = getString(R.string.dashboard_nutrition_header)
+        dialogBinding.etName.setText(currentDashboardData.todayMealName)
+        dialogBinding.tilName.hint = "Meal Name"
+        
+        dialogBinding.tilExtra1.visibility = View.VISIBLE
+        dialogBinding.tilExtra1.hint = "Nutrition Report"
+        dialogBinding.etExtra1.setText(currentDashboardData.nutritionReport)
+        
+        if (currentDashboardData.imageUrl != null) {
+            dialogBinding.ivPreview.load(currentDashboardData.imageUrl)
         }
         
-        val nameEdit = android.widget.EditText(this).apply {
-            hint = "Meal Name"
-            setText(currentDashboardData.todayMealName)
+        dialogBinding.btnChangeImage.setOnClickListener {
+            isUploadingDashboardImage = true
+            pickImageLauncher.launch("image/*")
         }
-        val reportEdit = android.widget.EditText(this).apply {
-            hint = "Nutrition Report"
-            setText(currentDashboardData.nutritionReport)
-        }
-        val btnPickImage = android.widget.Button(this).apply {
-            text = "Change Image"
-            setOnClickListener {
-                isUploadingDashboardImage = true
-                pickImageLauncher.launch("image/*")
-            }
-        }
-        
-        layout.addView(nameEdit)
-        layout.addView(reportEdit)
-        layout.addView(btnPickImage)
         
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(getString(R.string.dashboard_nutrition_header))
-            .setView(layout)
+            .setView(dialogBinding.root)
             .setPositiveButton(getString(R.string.save)) { _, _ ->
-                val newName = nameEdit.text.toString()
-                val newReport = reportEdit.text.toString()
+                val newName = dialogBinding.etName.text.toString()
+                val newReport = dialogBinding.etExtra1.text.toString()
                 if (newName.isNotEmpty()) {
                     val progressToast = Toast.makeText(this, "Saving changes...", Toast.LENGTH_SHORT)
                     progressToast.show()
                     firebaseManager.updateDashboardData(
                         currentDashboardData.copy(todayMealName = newName, nutritionReport = newReport)
-                    )
-                    progressToast.cancel()
-                    Toast.makeText(this, "Changes saved!", Toast.LENGTH_SHORT).show()
+                    ) {
+                        progressToast.cancel()
+                        Toast.makeText(this, "Changes saved!", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .setNegativeButton(getString(R.string.cancel), null)

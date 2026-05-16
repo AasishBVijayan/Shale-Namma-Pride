@@ -42,50 +42,46 @@ class StarsAdapter(
         }
 
         private fun showEditDialog(star: StudentStar) {
-            val layout = android.widget.LinearLayout(itemView.context).apply {
-                orientation = android.widget.LinearLayout.VERTICAL
-                setPadding(40, 20, 40, 0)
-            }
-            
-            val nameEdit = android.widget.EditText(itemView.context).apply {
-                hint = "Student Name"
-                setText(star.name)
-            }
-            val achievementEdit = android.widget.EditText(itemView.context).apply {
-                hint = "Achievement"
-                setText(star.achievement)
-            }
-            val descEdit = android.widget.EditText(itemView.context).apply {
-                hint = "Description"
-                setText(star.description)
-            }
-            val btnPickImage = android.widget.Button(itemView.context).apply {
-                text = "Change Image"
-                setOnClickListener {
-                    onPickImage?.invoke(star)
-                }
-            }
-            
-            layout.addView(nameEdit)
-            layout.addView(achievementEdit)
-            layout.addView(descEdit)
-            layout.addView(btnPickImage)
+            val context = itemView.context
+            val dialogBinding = com.shale.nammapride.databinding.DialogEditGenericBinding.inflate(
+                android.view.LayoutInflater.from(context)
+            )
 
-            AlertDialog.Builder(itemView.context)
-                .setTitle("Edit Student Star")
-                .setView(layout)
-                .setPositiveButton(itemView.context.getString(R.string.save)) { _, _ ->
-                    val newName = nameEdit.text.toString()
-                    val newAchievement = achievementEdit.text.toString()
-                    val newDesc = descEdit.text.toString()
+            dialogBinding.tvDialogTitle.text = "Edit Student Star"
+            dialogBinding.etName.setText(star.name)
+            dialogBinding.tilName.hint = "Student Name"
+
+            dialogBinding.tilExtra1.visibility = View.VISIBLE
+            dialogBinding.tilExtra1.hint = "Achievement"
+            dialogBinding.etExtra1.setText(star.achievement)
+
+            dialogBinding.tilExtra2.visibility = View.VISIBLE
+            dialogBinding.tilExtra2.hint = "Description"
+            dialogBinding.etExtra2.setText(star.description)
+
+            if (star.imageUrl != null) {
+                dialogBinding.ivPreview.load(star.imageUrl)
+            } else if (star.imageResId != null) {
+                dialogBinding.ivPreview.setImageResource(star.imageResId)
+            }
+
+            dialogBinding.btnChangeImage.setOnClickListener {
+                onPickImage?.invoke(star)
+            }
+
+            AlertDialog.Builder(context)
+                .setView(dialogBinding.root)
+                .setPositiveButton(context.getString(R.string.save)) { _, _ ->
+                    val newName = dialogBinding.etName.text.toString()
+                    val newAchievement = dialogBinding.etExtra1.text.toString()
+                    val newDesc = dialogBinding.etExtra2.text.toString()
                     if (newName.isNotEmpty() && newAchievement.isNotEmpty()) {
-                        Toast.makeText(itemView.context, "Saving...", Toast.LENGTH_SHORT).show()
                         firebaseManager.updateStudentStar(star.copy(name = newName, achievement = newAchievement, description = newDesc)) {
-                            Toast.makeText(itemView.context, "Saved!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Saved!", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
-                .setNegativeButton(itemView.context.getString(R.string.cancel), null)
+                .setNegativeButton(context.getString(R.string.cancel), null)
                 .show()
         }
     }

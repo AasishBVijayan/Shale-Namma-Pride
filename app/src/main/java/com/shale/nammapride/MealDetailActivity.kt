@@ -131,31 +131,31 @@ class MealDetailActivity : AppCompatActivity() {
     }
 
     private fun showEditMealDialog() {
-        val layout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(40, 20, 40, 0)
+        val dialogBinding = com.shale.nammapride.databinding.DialogEditGenericBinding.inflate(layoutInflater)
+        
+        dialogBinding.tvDialogTitle.text = getString(R.string.meal_nutrition_report)
+        dialogBinding.etName.setText(currentMealTitle)
+        dialogBinding.tilName.hint = "Meal Title"
+        
+        if (currentDashboardData.imageUrl != null) {
+            dialogBinding.ivPreview.load(currentDashboardData.imageUrl)
         }
         
-        val editText = android.widget.EditText(this).apply {
-            setText(currentMealTitle)
+        dialogBinding.btnChangeImage.setOnClickListener {
+            pickImageLauncher.launch("image/*")
         }
-        val btnPickImage = android.widget.Button(this).apply {
-            text = "Change Image"
-            setOnClickListener {
-                pickImageLauncher.launch("image/*")
-            }
-        }
-        
-        layout.addView(editText)
-        layout.addView(btnPickImage)
         
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.meal_nutrition_report))
-            .setView(layout)
+            .setView(dialogBinding.root)
             .setPositiveButton(getString(R.string.save)) { _, _ ->
-                val newName = editText.text.toString()
+                val newName = dialogBinding.etName.text.toString()
                 if (newName.isNotEmpty()) {
-                    firebaseManager.updateDashboardData(currentDashboardData.copy(todayMealName = newName))
+                    val progressToast = Toast.makeText(this, "Saving changes...", Toast.LENGTH_SHORT)
+                    progressToast.show()
+                    firebaseManager.updateDashboardData(currentDashboardData.copy(todayMealName = newName)) {
+                        progressToast.cancel()
+                        Toast.makeText(this, "Changes saved!", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .setNegativeButton(getString(R.string.cancel), null)

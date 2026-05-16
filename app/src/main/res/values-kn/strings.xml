@@ -69,5 +69,6 @@
     <string name="anonymous">ಅನಾಮಧೇಯ</string>
     <string name="submit_feedback">ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ಸಲ್ಲಿಸಿ</string>
     <string name="feedback_sent_toast">ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಕಳುಹಿಸಲಾಗಿದೆ!</string>
-
+    <string name="save">ಉಳಿಸಿ</string>
+    <string name="cancel">ರದ್ದುಮಾಡಿ</string>
 </resources>
